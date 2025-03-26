@@ -11,6 +11,7 @@ import (
 	"github.com/SemanticSugar/rightsizer/clients"
 	"github.com/SemanticSugar/rightsizer/models"
 	"github.com/SemanticSugar/rightsizer/services"
+	"github.com/SemanticSugar/rightsizer/utils"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
@@ -20,13 +21,10 @@ import (
 )
 
 func main() {
-	defaultDuration, _ := time.ParseDuration("336h")
-
 	app := &cli.Command{
 		Name:                   "rigthsizer",
 		Usage:                  "Right size your AWS ECS services.",
 		Version:                "3.0.0",
-		HideHelpCommand:        true,
 		ArgsUsage:              "<cluster> <service>",
 		UseShortOptionHandling: true,
 
@@ -34,13 +32,29 @@ func main() {
 			&cli.DurationFlag{
 				Name:    "time-frame",
 				Aliases: []string{"t"},
-				Value:   defaultDuration,
+				Value:   15 * 24 * time.Hour,
 				Usage:   "Time `DURATION` to draw stats from",
 			},
 			&cli.StringFlag{
 				Name:    "region",
 				Aliases: []string{"r"},
 				Usage:   "AWS `REGION` to use",
+			},
+			&cli.FloatFlag{
+				Name:  "target",
+				Usage: "Target `CPU` and `Memory` usage",
+				Value: 90,
+				Action: func(ctx context.Context, cmd *cli.Command, value float64) error {
+					if value < 0 || value > 100 {
+						return errors.New("target must be between 0 and 100")
+					}
+					return nil
+				},
+			},
+			&cli.BoolFlag{
+				Name:  "verbose",
+				Usage: "Print verbose output",
+				Value: false,
 			},
 		},
 
@@ -98,7 +112,28 @@ func main() {
 				return fmt.Errorf("failed to get allocation: %w", err)
 			}
 
-			newAllocation := allocation.Fix(usage, &models.Usage{CPU: 90, Memory: 90})
+			target := cmd.Float("target")
+			newAllocation := allocation.Fix(usage, &models.Usage{
+				CPU:    target,
+				Memory: target,
+			})
+
+			if cmd.Bool("verbose") {
+				formattedAllocation, err := yaml.Marshal(allocation)
+				if err != nil {
+					return fmt.Errorf("failed to marshal allocation: %w", err)
+				}
+				formattedUsage, err := yaml.Marshal(usage)
+				if err != nil {
+					return fmt.Errorf("failed to marshal usage: %w", err)
+				}
+				utils.PrintWithPrefix("# current allocation: ", string(formattedAllocation))
+				utils.PrintWithPrefix("# current usage:      ", string(formattedUsage))
+				utils.PrintWithPrefix("# target usage:       ", fmt.Sprintf("cpu: %.2f", target))
+				utils.PrintWithPrefix("# target usage:       ", fmt.Sprintf("memory: %.2f", target))
+				fmt.Println()
+
+			}
 
 			bytes, err := yaml.Marshal(newAllocation)
 			if err != nil {
