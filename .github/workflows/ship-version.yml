@@ -28,8 +28,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             nextroll/rightsizer:v3
-            nextroll/rightsizer:v3.0
-            nextroll/rightsizer:v3.0.0
+            nextroll/rightsizer:v3.1
+            nextroll/rightsizer:v3.1.0
 
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
