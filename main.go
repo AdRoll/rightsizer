@@ -57,16 +57,8 @@ func main() {
 				return errors.New("cannot see into the future just yet")
 			}
 
-			region := cmd.String("region")
-			if region == "" {
-				region = os.Getenv("AWS_REGION")
-			}
-
-			if region == "" {
-				return errors.New("cannot determine AWS region, checked the --region flag and the AWS_REGION environment variable")
-			}
-
-			cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+			defaultRegion := cmd.String("region")
+			cfg, err := config.LoadDefaultConfig(ctx, config.WithDefaultRegion(defaultRegion))
 			if err != nil {
 				return fmt.Errorf("unable to load SDK config, %v", err)
 			}
