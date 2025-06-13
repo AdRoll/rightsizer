@@ -80,7 +80,10 @@ version-bump:
 	sed -i '' "s/nextroll\/rightsizer:v[0-9][0-9]*/nextroll\/rightsizer:v$$MAJOR/" .github/workflows/ship-version.yml; \
 	sed -i '' "s/nextroll\/rightsizer:v[0-9][0-9]*\.[0-9][0-9]*/nextroll\/rightsizer:v$$MAJOR.$$MINOR/" .github/workflows/ship-version.yml; \
 	sed -i '' "s/nextroll\/rightsizer:v[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*/nextroll\/rightsizer:v$(VERSION)/" .github/workflows/ship-version.yml
+	@echo "Running go fmt..."
+	go fmt ./...
 	@echo "Version updated to $(VERSION) in .github/workflows/ship-version.yml"
+	
 
 # Help
 .PHONY: help
