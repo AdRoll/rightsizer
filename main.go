@@ -19,6 +19,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultTarget = 60.0
+)
+
 func main() {
 	defaultDuration, _ := time.ParseDuration("336h")
 
@@ -41,6 +45,12 @@ func main() {
 				Name:    "region",
 				Aliases: []string{"r"},
 				Usage:   "AWS `REGION` to use",
+			},
+			&cli.FloatFlag{
+				Name:    "target",
+				Aliases: []string{"g"},
+				Value:   defaultTarget,
+				Usage:   "Target resource utilization percentage",
 			},
 		},
 
@@ -90,7 +100,8 @@ func main() {
 				return fmt.Errorf("failed to get allocation: %w", err)
 			}
 
-			newAllocation := allocation.Fix(usage, &models.Usage{CPU: 90, Memory: 90})
+			target := cmd.Float("target")
+			newAllocation := allocation.Fix(usage, &models.Usage{CPU: target, Memory: target})
 
 			bytes, err := yaml.Marshal(newAllocation)
 			if err != nil {
