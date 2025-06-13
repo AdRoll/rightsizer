@@ -19,13 +19,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	defaultTarget = 60.0
+)
+
 func main() {
 	defaultDuration, _ := time.ParseDuration("336h")
 
 	app := &cli.Command{
 		Name:                   "rigthsizer",
 		Usage:                  "Right size your AWS ECS services.",
-		Version:                "3.0.0",
+		Version:                "3.1.0",
 		HideHelpCommand:        true,
 		ArgsUsage:              "<cluster> <service>",
 		UseShortOptionHandling: true,
@@ -40,7 +44,13 @@ func main() {
 			&cli.StringFlag{
 				Name:    "region",
 				Aliases: []string{"r"},
-				Usage:   "AWS `REGION` to use",
+				Usage:   "AWS region to use",
+			},
+			&cli.FloatFlag{
+				Name:    "target",
+				Aliases: []string{"g"},
+				Value:   defaultTarget,
+				Usage:   "Target resource utilization percentage",
 			},
 		},
 
@@ -57,23 +67,15 @@ func main() {
 				return errors.New("cannot see into the future just yet")
 			}
 
-			region := cmd.String("region")
-			if region == "" {
-				region = os.Getenv("AWS_REGION")
-			}
-
-			if region == "" {
-				return errors.New("cannot determine AWS region, checked the --region flag and the AWS_REGION environment variable")
-			}
-
-			cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+			defaultRegion := cmd.String("region")
+			cfg, err := config.LoadDefaultConfig(ctx, config.WithDefaultRegion(defaultRegion))
 			if err != nil {
 				return fmt.Errorf("unable to load SDK config, %v", err)
 			}
 
 			awsCloudwatchClient := cloudwatch.NewFromConfig(cfg)
-			cloutwatchClient := clients.NewCloudWatchClient(awsCloudwatchClient)
-			usageService := services.NewUsageService(cloutwatchClient)
+			cloudwatchClient := clients.NewCloudWatchClient(awsCloudwatchClient)
+			usageService := services.NewUsageService(cloudwatchClient)
 
 			awsEcsClient := ecs.NewFromConfig(cfg)
 			ecsClient := clients.NewECSClient(awsEcsClient)
@@ -98,7 +100,8 @@ func main() {
 				return fmt.Errorf("failed to get allocation: %w", err)
 			}
 
-			newAllocation := allocation.Fix(usage, &models.Usage{CPU: 90, Memory: 90})
+			target := cmd.Float("target")
+			newAllocation := allocation.Fix(usage, &models.Usage{CPU: target, Memory: target})
 
 			bytes, err := yaml.Marshal(newAllocation)
 			if err != nil {
