@@ -44,7 +44,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "region",
 				Aliases: []string{"r"},
-				Usage:   "AWS `REGION` to use",
+				Usage:   "AWS region to use",
 			},
 			&cli.FloatFlag{
 				Name:    "target",
@@ -74,8 +74,8 @@ func main() {
 			}
 
 			awsCloudwatchClient := cloudwatch.NewFromConfig(cfg)
-			cloutwatchClient := clients.NewCloudWatchClient(awsCloudwatchClient)
-			usageService := services.NewUsageService(cloutwatchClient)
+			cloudwatchClient := clients.NewCloudWatchClient(awsCloudwatchClient)
+			usageService := services.NewUsageService(cloudwatchClient)
 
 			awsEcsClient := ecs.NewFromConfig(cfg)
 			ecsClient := clients.NewECSClient(awsEcsClient)
