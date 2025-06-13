@@ -29,7 +29,7 @@ func main() {
 	app := &cli.Command{
 		Name:                   "rigthsizer",
 		Usage:                  "Right size your AWS ECS services.",
-		Version:                "3.0.0",
+		Version:                "3.1.0",
 		HideHelpCommand:        true,
 		ArgsUsage:              "<cluster> <service>",
 		UseShortOptionHandling: true,
